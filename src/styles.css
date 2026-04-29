@@ -83,7 +83,8 @@ input {
   font-size: 13px;
 }
 
-.status-row span:nth-child(2) {
+.status-row span:nth-child(2),
+.engine-row span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -105,6 +106,20 @@ input {
   border: 1px solid #a85d5d;
   color: #533a38;
   background: #ecddc9;
+}
+
+.engine-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  color: #6d514b;
+  font-size: 12px;
+}
+
+.engine-row strong {
+  color: #146039;
 }
 
 .command-form {
