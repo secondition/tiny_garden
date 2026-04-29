@@ -1,5 +1,9 @@
 use serde::Serialize;
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
+
+const ENGINE_CHECK_TIMEOUT: Duration = Duration::from_millis(1200);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -12,7 +16,19 @@ struct EngineStatus {
 }
 
 #[tauri::command]
-fn engine_status() -> EngineStatus {
+async fn engine_status() -> EngineStatus {
+    tauri::async_runtime::spawn_blocking(compute_engine_status)
+        .await
+        .unwrap_or_else(|_| EngineStatus {
+            active_engine: "rules",
+            wsl_available: false,
+            litert_lm_cli_available: false,
+            python_pip_available: false,
+            notes: vec!["引擎诊断失败，当前使用规则解析。".to_string()],
+        })
+}
+
+fn compute_engine_status() -> EngineStatus {
     let wsl_available = command_succeeds("wsl.exe", &["--status"]);
     let litert_lm_cli_available =
         wsl_available && command_succeeds("wsl.exe", &["bash", "-lc", "command -v litertlm"]);
@@ -47,9 +63,35 @@ pub fn run() {
 }
 
 fn command_succeeds(program: &str, args: &[&str]) -> bool {
-    Command::new(program)
+    let child = Command::new(program)
         .args(args)
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn();
+
+    let mut child = match child {
+        Ok(child) => child,
+        Err(_) => return false,
+    };
+
+    let deadline = Instant::now() + ENGINE_CHECK_TIMEOUT;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return status.success(),
+            Ok(None) if Instant::now() < deadline => {
+                thread::sleep(Duration::from_millis(25));
+            }
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return false;
+            }
+            Err(_) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return false;
+            }
+        }
+    }
 }
