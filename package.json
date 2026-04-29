@@ -1,0 +1,25 @@
+{
+  "name": "tiny-garden-windows",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "vite": "vite",
+    "typecheck": "tsc --noEmit",
+    "format": "biome check --write . && cargo fmt --manifest-path src-tauri/Cargo.toml --all",
+    "format:check": "biome check . && cargo fmt --manifest-path src-tauri/Cargo.toml --all --check",
+    "lint:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "check": "pnpm format:check && pnpm typecheck && pnpm vite build && pnpm lint:rust"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.10.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
+    "@tauri-apps/cli": "2.10.1",
+    "typescript": "6.0.3",
+    "vite": "8.0.10"
+  }
+}
