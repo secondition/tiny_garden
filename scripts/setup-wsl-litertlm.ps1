@@ -1,7 +1,8 @@
 param(
   [string]$ModelRepo = "litert-community/gemma-4-E2B-it-litert-lm",
   [string]$ModelFile = "gemma-4-E2B-it.litertlm",
-  [string]$InstallRoot = "~/.cache/tiny-garden"
+  [string]$InstallRoot = "~/.cache/tiny-garden",
+  [switch]$InstallAptPackages
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,6 +21,17 @@ mkdir -p "\$INSTALL_ROOT" "\$MODEL_DIR"
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 is required in WSL." >&2
   exit 1
+fi
+
+if ! python3 -m venv --help >/dev/null 2>&1; then
+  if [ "$($InstallAptPackages.IsPresent.ToString().ToLowerInvariant())" = "true" ]; then
+    sudo apt-get update
+    sudo apt-get install -y python3-venv python3-pip
+  else
+    echo "python3-venv is required in WSL." >&2
+    echo "Re-run with -InstallAptPackages to install python3-venv and python3-pip through apt." >&2
+    exit 1
+  fi
 fi
 
 python3 -m venv "\$VENV_DIR"

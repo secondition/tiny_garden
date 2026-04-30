@@ -3,9 +3,8 @@
 Windows desktop shell for the Google AI Edge Gallery Tiny Garden mini-game.
 
 This project packages the upstream Tiny Garden web game assets in a Tauri 2 desktop
-application and adds a Windows-friendly command bar. The current command engine is a
-deterministic parser for planting, watering, and harvesting commands; the next milestone is a
-local FunctionGemma/LiteRT-LM backend to match the Android app's model-driven tool calling.
+application and adds a Windows-friendly command bar. Commands are routed to a full Gemma
+LiteRT-LM sidecar in WSL when available, with a deterministic parser as the bundled fallback.
 
 ## Requirements
 
@@ -52,6 +51,16 @@ The release executable is produced at:
 ```text
 src-tauri/target/release/tiny-garden-windows.exe
 ```
+
+## Gemma Backend
+
+The app can use a full Gemma LiteRT-LM model through WSL:
+
+```powershell
+.\scripts\setup-wsl-litertlm.ps1
+```
+
+See `docs/wsl-litertlm.md` for setup details and the sidecar JSON contract.
 
 ## Upstream Assets
 

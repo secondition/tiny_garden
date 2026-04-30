@@ -14,6 +14,12 @@ Run from the Windows project root:
 .\scripts\setup-wsl-litertlm.ps1
 ```
 
+If WSL is missing `python3-venv`, allow the script to install the required Ubuntu packages:
+
+```powershell
+.\scripts\setup-wsl-litertlm.ps1 -InstallAptPackages
+```
+
 The script creates a WSL virtual environment under `~/.cache/tiny-garden/.venv`, installs
 `litert-lm-api-nightly`, and downloads:
 
@@ -44,3 +50,14 @@ The sidecar returns:
 
 If the WSL backend is unavailable or does not return a command, the app keeps the rules parser as
 the fallback path.
+
+## Manual Smoke Test
+
+After setup, run:
+
+```powershell
+'{"instruction":"plant roses in the right column"}' |
+  wsl.exe bash -lc "~/.cache/tiny-garden/.venv/bin/python $(wslpath -a scripts/gemma_garden_sidecar.py)"
+```
+
+Expected output contains `commands` with item `3` and plots `[3, 6, 9]`.
