@@ -1,4 +1,4 @@
-import { loadEngineStatus } from "./engineStatus";
+import { loadEngineStatus, requestGemmaCommand } from "./engineStatus";
 import { EXAMPLE_COMMANDS, parseGardenInstruction } from "./gardenCommands";
 import "./styles.css";
 import { TinyGardenBridge } from "./tinyGardenBridge";
@@ -68,6 +68,7 @@ const historyList = getElement<HTMLOListElement>("#history-list");
 const historyToggle = getElement<HTMLButtonElement>("#history-toggle");
 const historyClose = getElement<HTMLButtonElement>("#history-close");
 const quickRow = getElement<HTMLDivElement>("#quick-row");
+let gemmaAvailable = false;
 
 const bridge = new TinyGardenBridge(frame, {
   onLoading: () => {
@@ -117,10 +118,24 @@ function renderQuickCommands() {
   }
 }
 
-function runInstruction(text: string) {
+async function runInstruction(text: string) {
   if (!bridge.ready) {
     setStatus("游戏还没加载完", false);
     return;
+  }
+
+  if (gemmaAvailable) {
+    setStatus("正在请求 Gemma", true);
+    const gemma = await requestGemmaCommand(text);
+    if (gemma.ok && gemma.commands.length > 0) {
+      bridge.run(gemma.commands);
+      const payload = JSON.stringify(gemma.commands);
+      const result = gemma.text || `Gemma 执行了 ${gemma.commands.length} 个动作`;
+      setStatus(result, true);
+      addHistory(text, result, payload);
+      return;
+    }
+    addHistory(text, gemma.error ?? "Gemma 未返回可执行命令，已回退到规则解析。", null);
   }
 
   const parsed = parseGardenInstruction(text);
@@ -144,10 +159,11 @@ function setStatus(text: string, ready: boolean) {
 async function renderEngineStatus() {
   try {
     const status = await loadEngineStatus();
-    engineMode.textContent = status.activeEngine === "rules" ? "规则解析" : status.activeEngine;
+    gemmaAvailable = status.activeEngine === "gemma-wsl";
+    engineMode.textContent = gemmaAvailable ? "Gemma WSL" : "规则解析";
 
-    if (status.litertLmCliAvailable) {
-      engineNote.textContent = "检测到 LiteRT-LM CLI，可接入模型 sidecar";
+    if (gemmaAvailable) {
+      engineNote.textContent = "完整 Gemma 已就绪，规则解析作为回退";
       return;
     }
 
